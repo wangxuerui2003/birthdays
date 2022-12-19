@@ -20,27 +20,30 @@ def after_request(response):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if request.method == "POST":
+	if request.method == "POST":
 
-        name = request.form.get("name")
-        month = request.form.get("month")
-        day = request.form.get("day")
+		name = request.form.get("name")
+		month = request.form.get("month")
+		day = request.form.get("day")
 
-        if not name or not month or not day:
-            return render_template("error.html")
+		if not name or not month or not day:
+			return render_template("error.html")
 
-        current_id = db.execute("SELECT id FROM birthdays ORDER BY id DESC LIMIT 1")
-        if not current_id:
-            current_id = 1
-        else:
-            current_id = current_id[0]["id"] + 1
-        db.execute("INSERT INTO birthdays (id, name, month, day) VALUES (?, ?, ?, ?)", current_id, name, month, day)
+		current_id = db.execute("SELECT id FROM birthdays ORDER BY id DESC LIMIT 1").fetchone()
+		if not current_id:
+			current_id = 1
+		else:
+			current_id = current_id.id + 1
 
-        return redirect("/")
+		db.execute("INSERT INTO birthdays (id, name, month, day) VALUES (:current_id, :name, :month, :day)", {"current_id":current_id, "name":name, "month":month, "day":day})
 
-    else:
+		db.commit()
 
-        birthdays = db.execute("SELECT * FROM birthdays")
-        print(birthdays)
+		return redirect("/")
 
-        return render_template("index.html", birthdays=birthdays)
+	else:
+
+		birthdays = db.execute("SELECT * FROM birthdays")
+		print(birthdays)
+
+		return render_template("index.html", birthdays=birthdays)
